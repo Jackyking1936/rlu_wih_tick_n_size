@@ -1,0 +1,11 @@
+__pycache__/
+log/
+build/
+dist/
+*.pkl
+*.env
+*.ppt
+*.pptx
+*.pdf
+*.json
+*.spec
