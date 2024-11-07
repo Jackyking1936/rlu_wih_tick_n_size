@@ -10,10 +10,10 @@ from pathlib import Path
 import fubon_neo
 from fubon_neo.sdk import FubonSDK, Mode, Order
 from fubon_neo.constant import TimeInForce, OrderType, PriceType, MarketType, BSAction
-from rlu_tick_n_size_ui import my_ui
+from rlu_tick_n_size_ui import MyUI
 
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QVBoxLayout, QMessageBox, QTableWidget, QTableWidgetItem, QPlainTextEdit, QFileDialog, QSizePolicy
-from PySide6.QtGui import QTextCursor, QIcon, QColor
+from PySide6.QtWidgets import QApplication, QWidget, QTableWidgetItem, QFileDialog
+from PySide6.QtGui import QTextCursor, QColor
 from PySide6.QtCore import Qt, Signal, QObject
 from threading import Timer
 
@@ -55,12 +55,12 @@ class rlu_trader_tick_n_size(QWidget):
         self.sdk = self.login_handler.sdk
         self.active_account = self.login_handler.active_account
 
-        self.rlu_ui = my_ui()
+        self.rlu_ui = MyUI()
 
         # 設定窗口屬性
         self.setWindowTitle(self.rlu_ui.windowTitle())
         self.setWindowIcon(self.rlu_ui.windowIcon())
-        self.setGeometry(self.rlu_ui.geometry())
+        self.resize(1000, 600)
 
         # 將 MyUI 的佈局設定到 MainWindow
         self.setLayout(self.rlu_ui.layout())

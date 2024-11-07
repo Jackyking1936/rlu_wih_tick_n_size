@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineE
 from PySide6.QtGui import QTextCursor, QIcon, QColor
 from PySide6.QtCore import Qt, Signal, QObject
 
-class my_ui(QWidget):
+class MyUI(QWidget):
     def __init__(self):
         super().__init__()
 
