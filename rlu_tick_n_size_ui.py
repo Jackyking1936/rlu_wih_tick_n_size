@@ -1,7 +1,7 @@
 ### Layout 設定
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QVBoxLayout, QMessageBox, QTableWidget, QTableWidgetItem, QPlainTextEdit, QFileDialog, QSizePolicy
-from PySide6.QtGui import QTextCursor, QIcon, QColor
-from PySide6.QtCore import Qt, Signal, QObject
+from PySide6.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QVBoxLayout, QTableWidget, QPlainTextEdit, QSizePolicy
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt
 
 class MyUI(QWidget):
     def __init__(self):
@@ -105,9 +105,9 @@ class MyUI(QWidget):
         self.log_text = QPlainTextEdit()
         self.log_text.setReadOnly(True)
 
-        layout.addWidget(self.tablewidget)
-        layout.addLayout(layout_condition)
-        layout.addLayout(layout_sim)
-        layout.addWidget(self.log_text)
+        layout.addWidget(self.tablewidget, stretch=7)
+        layout.addLayout(layout_condition, stretch=1)
+        layout.addLayout(layout_sim, stretch=1)
+        layout.addWidget(self.log_text, stretch=3)
 
         self.setLayout(layout)
