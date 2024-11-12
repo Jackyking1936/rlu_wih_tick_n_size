@@ -103,8 +103,10 @@ class rlu_trader_tick_n_size(QWidget):
         # variable init
         self.table_header = self.rlu_ui.table_header
         self.row_idx_map = {}
-        self.col_idx_map = dict(zip(self.table_header, range(0, len(self.table_header))))
+        self.col_idx_map = dict(zip(self.table_header, range(0, len(self.table_header)))) 
         self.last_close_dict = {}
+        self.limit_up_dict = {}
+        self.pre_tick_dict = {}
         self.subscribed_ids = {}
         self.order_tag = 'rlu'
         self.is_ordered = {}
@@ -116,6 +118,7 @@ class rlu_trader_tick_n_size(QWidget):
         self.fake_price_cnt = 0
         self.volume_threshold = 0
         self.size_threshold = 0
+        self.pre_tick = 0
 
     def fake_disconnect(self):
         # self.wsstock.disconnect()
@@ -125,7 +128,7 @@ class rlu_trader_tick_n_size(QWidget):
     def fake_ws_data(self):
         if self.fake_price_cnt % 2==0:
             self.price_interval = 0
-            self.fake_ws_timer = RepeatTimer(1, self.fake_message, args=(list(self.row_idx_map.keys())[0], ))
+            self.fake_ws_timer = RepeatTimer(0.01, self.fake_message, args=(list(self.row_idx_map.keys())[0], ))
             self.fake_ws_timer.start()
         else:
             self.fake_ws_timer.cancel()
@@ -276,6 +279,7 @@ class rlu_trader_tick_n_size(QWidget):
             self.communicator.print_log_signal.emit(remove_key+"...成功移除訂閱")
 
         elif event == "snapshot":
+            symbol = data['symbol']
             if 'isTrial' in data:
                 if data['isTrial']:
                     return
@@ -292,9 +296,10 @@ class rlu_trader_tick_n_size(QWidget):
                 data['price'] = -1
             
             # print(event, data)
-            self.communicator.update_table_row_signal.emit(data['symbol'], data['price'], data['bid'], data['ask'], is_limit_up)
+            self.communicator.update_table_row_signal.emit(symbol, data['price'], data['bid'], data['ask'], is_limit_up)
 
         elif event == "data":
+            symbol = data['symbol']
             if 'isTrial' in data:
                 if data['isTrial']:
                     return
@@ -311,37 +316,36 @@ class rlu_trader_tick_n_size(QWidget):
                 data['price'] = -1
             
             # print(event, data)
-            self.communicator.update_table_row_signal.emit(data['symbol'], data['price'], data['bid'], data['ask'], is_limit_up)
+            self.communicator.update_table_row_signal.emit(symbol, data['price'], data['bid'], data['ask'], is_limit_up)
             
-            if ('isLimitUpPrice' in data) and (data['symbol'] not in self.is_ordered):
-                if (self.trade_budget <= (self.total_budget-self.used_budget)):
-                    if data['isLimitUpPrice']:
-                        self.communicator.print_log_signal.emit(data['symbol']+'...送出市價單')
+            if 'price' in data:
+                if (data['price']>=self.pre_tick_dict[symbol]) and (symbol not in self.is_ordered):
+                    if (self.trade_budget <= (self.total_budget-self.used_budget)):
+                        self.communicator.print_log_signal.emit(symbol+'...送出市價單')
                         if data['volume'] >= self.volume_threshold:
                             if data['size'] >= self.size_threshold:
                                 print(data['size'], self.size_threshold)
-                                if 'price' in data:
-                                    buy_qty = self.trade_budget//(data['price']*1000)*1000
+                                buy_qty = self.trade_budget//(data['price']*1000)*1000
                                     
                                 if buy_qty <= 0:
-                                    self.communicator.print_log_signal.emit(data['symbol']+'...額度不足購買1張')
+                                    self.communicator.print_log_signal.emit(symbol+'...額度不足購買1張')
                                 else:
-                                    self.communicator.print_log_signal.emit(data['symbol']+'...委託'+str(buy_qty)+'股')
-                                    order_res = self.buy_market_order(data['symbol'], buy_qty, self.order_tag)
+                                    self.communicator.print_log_signal.emit(symbol+'...委託'+str(buy_qty)+'股')
+                                    order_res = self.buy_market_order(symbol, buy_qty, self.order_tag)
                                     if order_res.is_success:
-                                        self.communicator.print_log_signal.emit(data['symbol']+"...市價單發送成功，單號: "+order_res.data.order_no)
-                                        self.is_ordered[data['symbol']] = buy_qty
+                                        self.communicator.print_log_signal.emit(symbol+"...市價單發送成功，單號: "+order_res.data.order_no)
+                                        self.is_ordered[symbol] = buy_qty
                                         self.used_budget+=buy_qty*data['price']
-                                        self.communicator.order_qty_update.emit(data['symbol'], buy_qty)
+                                        self.communicator.order_qty_update.emit(symbol, buy_qty)
                                     else:
-                                        self.communicator.print_log_signal.emit(data['symbol']+"...市價單發送失敗...")
+                                        self.communicator.print_log_signal.emit(symbol+"...市價單發送失敗...")
                                         self.communicator.print_log_signal.emit(order_res.message)
                             else:
-                                self.communicator.print_log_signal.emit(data['symbol']+"...tick單量不足，市價單發送失敗...")
+                                self.communicator.print_log_signal.emit(symbol+"...tick單量不足，市價單發送失敗...")
                         else:
-                            self.communicator.print_log_signal.emit(data['symbol']+"...交易量不足，市價單發送失敗...")
-                else:
-                    self.communicator.print_log_signal.emit(data['symbol']+"總額度超限 "+"已使用額度/總額度: "+str(self.used_budget)+'/'+str(self.total_budget))
+                            self.communicator.print_log_signal.emit(symbol+"...交易量不足，市價單發送失敗...")
+                    else:
+                        self.communicator.print_log_signal.emit(symbol+"總額度超限 "+"已使用額度/總額度: "+str(self.used_budget)+'/'+str(self.total_budget))
 
     def handle_connect(self):
         self.communicator.print_log_signal.emit('market data connected')
@@ -401,11 +405,21 @@ class rlu_trader_tick_n_size(QWidget):
             self.print_log("請輸入正確的單量門檻(張), "+str(e))
             return
         
+        try:
+            self.pre_tick = int(self.rlu_ui.lineEdit_pre_tick.text())
+            if self.pre_tick<0:
+                self.print_log("請輸入正確的漲停前tick數, 整數, 必須大於等於0")
+                return
+        except Exception as e:
+            self.print_log("請輸入正確的漲停前tick數, "+str(e))
+            return
+
         self.print_log("開始執行監控, "+str(self.volume_threshold))
         self.rlu_ui.lineEdit_trade_budget.setReadOnly(True)
         self.rlu_ui.lineEdit_total_budget.setReadOnly(True)
         self.rlu_ui.lineEdit_total_volume.setReadOnly(True)
         self.rlu_ui.lineEdit_tick_size.setReadOnly(True)
+        self.rlu_ui.lineEdit_pre_tick.setReadOnly(True)
         self.rlu_ui.button_start.setVisible(False)
         self.rlu_ui.button_stop.setVisible(True)
         self.rlu_ui.folder_btn.setEnabled(False)
@@ -422,10 +436,14 @@ class rlu_trader_tick_n_size(QWidget):
         self.wsstock.on('error', self.handle_error)
         self.wsstock.connect()
 
+        for symbol, value in self.limit_up_dict.items():
+            pre_tick_price = self.tick_diff_price_cal(value, -self.pre_tick)
+            self.pre_tick_dict[symbol] = pre_tick_price
+
         if self.target_symbols:
             self.wsstock.subscribe({
                 'channel': 'trades',
-                'symbols':self.target_symbols
+                'symbols': self.target_symbols
             })
         else:
             self.print_log("請先讀取下單目標清單")
@@ -447,6 +465,40 @@ class rlu_trader_tick_n_size(QWidget):
 
         self.active_logout=True
         self.wsstock.disconnect()
+
+    def tick_diff_price_cal(self, limit_up_price, diff_num):
+        epsilon = 0.0000001
+
+        if diff_num<0:
+            for i in range(abs(diff_num)):
+                if limit_up_price <= 10:
+                    limit_up_price = limit_up_price-0.01
+                elif limit_up_price <= 50:
+                    limit_up_price = limit_up_price-0.05
+                elif limit_up_price <= 100:
+                    limit_up_price = limit_up_price-0.1
+                elif limit_up_price <= 500:
+                    limit_up_price = limit_up_price-0.5
+                elif limit_up_price <= 1000:
+                    limit_up_price = limit_up_price-1
+                elif limit_up_price > 1000:
+                    limit_up_price = limit_up_price-5
+        else:
+            for i in range(diff_num):
+                if limit_up_price < 10:
+                    limit_up_price = limit_up_price+0.01
+                elif limit_up_price < 50:
+                    limit_up_price = limit_up_price+0.05
+                elif limit_up_price < 100:
+                    limit_up_price = limit_up_price+0.1
+                elif limit_up_price < 500:
+                    limit_up_price = limit_up_price+0.5
+                elif limit_up_price < 1000:
+                    limit_up_price = limit_up_price+1
+                elif limit_up_price >= 1000:
+                    limit_up_price = limit_up_price+5
+
+        return round(limit_up_price+epsilon, 2)
 
     def read_target_list(self):
         self.print_log("reading target list...")
@@ -471,6 +523,7 @@ class rlu_trader_tick_n_size(QWidget):
                 ticker_res = self.reststock.intraday.ticker(symbol=symbol)
                 # self.print_log(ticker_res['name'])
                 self.last_close_dict[symbol] = ticker_res['referencePrice']
+                self.limit_up_dict[symbol] = ticker_res['limitUpPrice']
 
                 row = self.rlu_ui.tablewidget.rowCount()
                 self.rlu_ui.tablewidget.insertRow(row)
