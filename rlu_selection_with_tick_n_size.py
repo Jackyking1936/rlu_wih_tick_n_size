@@ -324,7 +324,7 @@ class rlu_trader_tick_n_size(QWidget):
                         self.communicator.print_log_signal.emit(symbol+'...送出市價單')
                         if data['volume'] >= self.volume_threshold:
                             if data['size'] >= self.size_threshold:
-                                print(data['size'], self.size_threshold)
+                                print(data['price'], self.limit_up_dict[symbol], self.pre_tick_dict[symbol])
                                 buy_qty = self.trade_budget//(data['price']*1000)*1000
                                     
                                 if buy_qty <= 0:
@@ -458,6 +458,7 @@ class rlu_trader_tick_n_size(QWidget):
         self.rlu_ui.lineEdit_total_budget.setReadOnly(False)
         self.rlu_ui.lineEdit_total_volume.setReadOnly(False)
         self.rlu_ui.lineEdit_tick_size.setReadOnly(False)
+        self.rlu_ui.lineEdit_pre_tick.setReadOnly(False)
         self.rlu_ui.button_stop.setVisible(False)
         self.rlu_ui.button_start.setVisible(True)
         self.rlu_ui.folder_btn.setEnabled(True)

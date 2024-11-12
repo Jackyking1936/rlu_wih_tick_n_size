@@ -19,7 +19,7 @@ class MyUI(QWidget):
         # 庫存表表頭
         self.table_header = ['股票名稱', '股票代號', '上市櫃', '成交', '買進', '賣出', '漲幅(%)', '委託數量', '成交數量']
         
-        label_program_name = QLabel("搶漲停小幫手(提前Tick & 單量版)")
+        label_program_name = QLabel("搶漲停小幫手(搶跑版)")
         label_program_name.setStyleSheet("color: red; font-size: 24px; font-weight: bold;")
 
         self.tablewidget = QTableWidget(0, len(self.table_header))
