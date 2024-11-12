@@ -194,7 +194,7 @@ class rlu_trader_tick_n_size(QWidget):
         self.rlu_ui.tablewidget.item(self.row_idx_map[symbol], self.col_idx_map['委託數量']).setText(str(order_qty))
 
     def on_event(self, code, content):
-        if code == '302':
+        if code == '300':
             self.communicator.print_log_signal.emit("Trade connection unexpected disconnect")
             self.communicator.print_log_signal.emit("Try reconnecting...")
             my_file = Path("./info.pkl")
