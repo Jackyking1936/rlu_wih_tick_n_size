@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fubon_neo.sdk import FubonSDK
 
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QPlainTextEdit, QLabel, QLineEdit, QGridLayout, QVBoxLayout, QMessageBox, QFileDialog
+from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QVBoxLayout, QMessageBox, QFileDialog, QPlainTextEdit
 from PySide6.QtGui import QIcon
 
 class login_handler(QWidget):
@@ -120,18 +120,10 @@ class login_handler(QWidget):
 
         if accounts.is_success:
             for cur_account in accounts.data:
-                if cur_account.account == target_account:
+                if cur_account.account == str(int(target_account)):
                     self.active_account = cur_account
                     with open('info.pkl', 'wb') as f:
                         pickle.dump(self.user_info_dict, f)
-                    
-                    self.close()
-
-                elif target_account[0] == '0':
-                    if cur_account.account == str(int(target_account)):
-                        self.active_account = cur_account
-                        with open('info.pkl', 'wb') as f:
-                            pickle.dump(self.user_info_dict, f)
                     self.close()
                     
             if self.active_account == None:
@@ -153,16 +145,10 @@ class login_handler(QWidget):
             
             if accounts.is_success:
                 for cur_account in accounts.data:
-                    if cur_account.account == self.user_info_dict['target_account']:
+                    if cur_account.account == str(int(self.user_info_dict['target_account'])):
                         self.active_account = cur_account
                         with open('info.pkl', 'wb') as f:
                             pickle.dump(self.user_info_dict, f)
-
-                    elif self.user_info_dict['target_account'][0] == '0':
-                        if cur_account.account == self.user_info_dict['target_account'][1:]:
-                            self.active_account = cur_account
-                            with open('info.pkl', 'wb') as f:
-                                pickle.dump(self.user_info_dict, f)
         return self.sdk, self.active_account
 
 class MainApp(QWidget):
@@ -171,7 +157,7 @@ class MainApp(QWidget):
 
         self.active_account = active_account
         self.setWindowTitle("Python教學範例")
-        self.resize(1200, 600)
+        self.resize(600, 400)
         # Log區Layout設定
         self.log_text = QPlainTextEdit()
         self.log_text.setReadOnly(True)
