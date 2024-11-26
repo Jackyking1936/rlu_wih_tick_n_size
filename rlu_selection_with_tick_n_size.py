@@ -12,7 +12,7 @@ from fubon_neo.constant import TimeInForce, OrderType, PriceType, MarketType, BS
 from rlu_tick_n_size_ui import MyUI
 
 from PySide6.QtWidgets import QApplication, QWidget, QTableWidgetItem, QFileDialog
-from PySide6.QtGui import QTextCursor, QColor
+from PySide6.QtGui import QTextCursor, QColor, QFont
 from PySide6.QtCore import Qt, Signal, QObject
 from threading import Timer
 
@@ -616,7 +616,11 @@ if __name__ == '__main__':
         app = QApplication(sys.argv)
     else:
         app = QApplication.instance()
+    
+    font = QFont("Microsoft JhengHei")  # 字體名稱 + 大小
+    app.setFont(font)
     app.setStyleSheet("QWidget{font-size: 12pt;}")
+    
     login_form = login_handler(sdk, 'fast_icon.png')
     login_form.show()
     login_form_res = app.exec()
